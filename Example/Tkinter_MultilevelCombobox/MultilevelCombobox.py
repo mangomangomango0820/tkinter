@@ -7,17 +7,17 @@
 import tkinter as tk
 from tkinter import *
 from tkinter.ttk import Combobox
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from PIL import Image, ImageTk
 import pickle
 import json
+import pandas as pd
 
 image = None
 im = None
 
 class LogIn:
-    def __init__(self, info):
-        self.info = info
+    def __init__(self):
         self.un, self.pw = '', ''
         self.root = tk.Tk()
         self.root.title('Log in')
@@ -72,7 +72,7 @@ class LogIn:
                 if self.pw == usrs_info[self.un]:
                     tk.messagebox.showinfo(title='Welcome', message=f"'{self.un}' Log in successfully.")
                     geo = tk.Toplevel()
-                    Geo(geo, self.info)
+                    Geo(geo)
                     geo.transient(self.root)
                     geo.mainloop()
                 else:
@@ -162,51 +162,79 @@ class LogIn:
 
 
 class Geo:
-    def __init__(self, root, info):
-        self.info = info
+    def __init__(self, root):
         self.root = root
         self.root.title('Choose')
         self.root.geometry('500x450+500+250')
         self.interface()
 
+    def getfile(self):
+        def browse():
+            file_name = filedialog.askopenfilename(
+                title="Open File", initialdir="./",
+                filetypes=[("Excel", ".xlsx")])
+            self.entry_browse.insert('insert', file_name)
+
+        btn_browse = tk.Button(self.root, text="Browse", command=browse)
+        btn_browse.grid(row=0, column=0, padx=20, pady=20)
+        xscrollbar = Scrollbar(self.root, orient=HORIZONTAL)
+        xscrollbar.place(relx=0.5, rely=0.14, width=100, height=5)
+        # xscrollbar.grid(row=1, column=1, sticky=N+S+E+W)
+        self.entry_browse = tk.Entry(self.root, xscrollcommand=xscrollbar.set, width=32)
+        self.entry_browse.grid(row=0, column=1, padx=20, pady=20)
+        xscrollbar.config(command=self.entry_browse.xview)
+
+        self.info = pd.read_excel(self.entry_browse.get(), sheet_name='Sheet1', na_values='None')
+        states_cnt = self.info['State'].value_counts()
+        self.states = list(states_cnt.index.values)
+
     def interface(self):
-        self.states = list(self.info.keys())
+        btn_browse = tk.Button(self.root, text="Browse", command=self.browse)
+        btn_browse.grid(row=0, column=0, padx=20, pady=20)
+        xscrollbar = Scrollbar(self.root, orient=HORIZONTAL)
+        xscrollbar.place(relx=0.4, rely=0.14, width=200, height=5)
+        # xscrollbar.grid(row=1, column=1, sticky=N+S+E+W)
+        self.entry_browse = tk.Entry(self.root, xscrollcommand=xscrollbar.set, width=32)
+        self.entry_browse.grid(row=0, column=1, padx=20, pady=20)
+        xscrollbar.config(command=self.entry_browse.xview)
+
         lstate = tk.Label(self.root, text='State')
-        lstate.grid(row=1, column=0, padx=20, pady=20)
-        self.cbstate = Combobox(self.root, state='normal', values=self.states, width=30, postcommand=self.automatchstate)
-        self.cbstate.grid(row=1, column=1, padx=20, pady=20)
+        lstate.grid(row=2, column=0, padx=20, pady=20)
+        self.cbstate = Combobox(self.root, state='normal', width=30, postcommand=self.automatchstate)
+        self.cbstate.grid(row=2, column=1, padx=20, pady=20)
         self.cbstate.bind('<<ComboboxSelected>>', self.stateslist)
 
         lcountry = tk.Label(self.root, text='Country')
-        lcountry.grid(row=2, column=0, padx=20, pady=20)
+        lcountry.grid(row=3, column=0, padx=20, pady=20)
         self.cbcountry = Combobox(self.root, state='normal', width=30, postcommand=self.automatchcountry)
-        self.cbcountry.grid(row=2, column=1, padx=20, pady=20)
+        self.cbcountry.grid(row=3, column=1, padx=20, pady=20)
         self.cbcountry.bind('<<ComboboxSelected>>', self.countrieslist)
 
         lcity = tk.Label(self.root, text='City')
-        lcity.grid(row=3, column=0, padx=20, pady=20)
+        lcity.grid(row=4, column=0, padx=20, pady=20)
         self.cbcity = Combobox(self.root, state='normal', width=30, postcommand=self.automatchcity)
-        self.cbcity.grid(row=3, column=1, padx=20, pady=20)
+        self.cbcity.grid(row=4, column=1, padx=20, pady=20)
         self.cbcity.bind('<<ComboboxSelected>>', self.citieslist)
 
-        lval = tk.Label(self.root, text='Val')
-        lval.grid(row=4, column=0, padx=20, pady=20)
-        self.cbval = Combobox(self.root, state='normal', width=30)
-        self.cbval.grid(row=4, column=1, padx=20, pady=20)
-        self.cbval.bind('<<ComboboxSelected>>', self.valslist)
-
         btn_collect = tk.Button(self.root, text='Collect', command=self.table)
-        btn_collect.place(relx=0.15, rely=0.6, width=70, height=30)
+        btn_collect.place(relx=0.2, rely=0.6, width=70, height=30)
         btn_clear = tk.Button(self.root, text='Clear', command=self.clear)
-        btn_clear.place(relx=0.4, rely=0.6, width=70, height=30)
+        btn_clear.place(relx=0.45, rely=0.6, width=70, height=30)
         btn_exit = tk.Button(self.root, text='Exit', command=self.root.destroy)
-        btn_exit.place(relx=0.65, rely=0.6, width=70, height=30)
+        btn_exit.place(relx=0.7, rely=0.6, width=70, height=30)
+
+    def browse(self):
+        file_name = filedialog.askopenfilename(
+            title="Open File", initialdir="./",
+            filetypes=[("Excel", ".xlsx")])
+        self.entry_browse.insert('insert', file_name)
+
+        return file_name
 
     def clear(self):
         self.cbstate.set('')
         self.cbcountry.set('')
         self.cbcity.set('')
-        self.cbval.set('')
         self.tree.delete(*self.tree.get_children())
 
     def table(self):
@@ -225,38 +253,68 @@ class Geo:
         self.tree.insert("", "end", values=('state', self.cbstate.get()))
         self.tree.insert("", "end", values=("country", self.cbcountry.get()))
         self.tree.insert("", "end", values=("city", self.cbcity.get()))
-        self.tree.insert("", "end", values=("val", self.cbval.get()))
-        self.tree.place(relx=0.1, rely=0.7, width=400, height=100)
+        self.tree.place(relx=0.1, rely=0.75, width=400, height=90)
         self.tree.bind("<<TreeviewSelect>>", item_select)
 
     def stateslist(self, event):
-        self.cbstate['values'] = [i for i in self.states if self.cbstate.get() in i]
-        self.cbcountry['values'] = list(self.info.get(self.cbstate.get()).keys())
+        self.info = pd.read_excel(self.entry_browse.get(), sheet_name='Sheet1', na_values='None')
+
+        print(f'statelist:')
+        # states_cnt = self.info['State'].value_counts()
+        # self.states = list(states_cnt.index.values)
+        # self.cbstate['values'] = [i for i in self.states if self.cbstate.get() in i]
+        print(f"choose state:\n{self.cbstate.get()}")
+        print(f"choose state list:\n{self.cbstate['values']}")
+
+        countries = self.info.loc[self.info.State == self.cbstate.get(), 'Country'].value_counts()
+        self.countries = list(countries.index.values)
+        self.cbcountry['values'] = self.countries
+        print(f"get countries list:\n{self.countries}")
+        print()
 
     def countrieslist(self, event):
-        self.cbcountry['values'] = list(self.info.get(self.cbstate.get()).keys())
-        self.cbcity['values'] = list(self.info.get(self.cbstate.get()).get(self.cbcountry.get()).keys())
+        self.info = pd.read_excel(self.entry_browse.get(), sheet_name='Sheet1', na_values='None')
+
+        print(f'countrieslist:')
+        print(f"choose country:\n{self.cbcountry.get()}")
+        print(f"choose country list:\n{self.cbcountry['values']}")
+
+        cities = self.info.loc[self.info.Country == self.cbcountry.get(), 'City'].value_counts()
+        self.cities = list(cities.index.values)
+        self.cbcity['values'] = self.cities
+        print(f"get cities list:\n{self.cities}")
+        print()
 
     def citieslist(self, event):
-        self.cbcity['values'] = list(self.info.get(self.cbstate.get()).get(self.cbcountry.get()).keys())
-        self.cbval['values'] = self.info.get(self.cbstate.get()).get(self.cbcountry.get()).get(self.cbcity.get())
-
-    def valslist(self, event):
-        self.cbval['values'] = list(self.info.get(self.cbstate.get()).get(self.cbcountry.get()).get(self.cbcity.get()))
+        print(f'citieslist:')
+        print(f"choose city:\n{self.cbcity.get()}")
+        # self.cbcity['values'] = self.cities
+        print()
 
     def automatchstate(self):
-        self.cbstate['values'] = [i for i in self.cbstate['values'] if self.cbstate.get() in i]
+        print('automatch state:')
+        self.info = pd.read_excel(self.entry_browse.get(), sheet_name='Sheet1', na_values='None')
+        states_cnt = self.info['State'].value_counts()
+        self.states = list(states_cnt.index.values)
+        self.cbstate['values'] = [i for i in self.states if self.cbstate.get() in i]
+        print(f"state keyword:\n{self.cbstate.get()}")
+        print(f"automatch state list:\n{self.cbstate['values']}")
+        print()
 
     def automatchcountry(self):
+        print('automatch country:')
         self.cbcountry['values'] = [i for i in self.cbcountry['values'] if self.cbcountry.get() in i]
+        print(f"country keyword:\n{self.cbcountry.get()}")
+        print(f"automatch country list:\n{self.cbcountry['values']}")
+        print()
 
     def automatchcity(self):
+        print('automatch city:')
         self.cbcity['values'] = [i for i in self.cbcity['values'] if self.cbcity.get() in i]
+        print(f"city keyword:\n{self.cbcity.get()}")
+        print(f"automatch city list:\n{self.cbcity['values']}")
+        print()
 
 if __name__ == '__main__':
-    f = open("geography_info.json")
-    geo_info = json.load(f)
-    f.close()
-
-    exLogIn = LogIn(geo_info)
+    exLogIn = LogIn()
     exLogIn.root.mainloop()
